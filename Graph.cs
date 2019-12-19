@@ -1,137 +1,198 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SemesterTask
 {
     public class Graph
     {
-
-        private int vertices; // No. of vertices 
-        private List<int>[] adj; // adjacency list 
-
-        // Constructor 
-        public Graph(int numOfVertices)
+        private int Length;
+        private int[] nodes;
+        private List<int>[] adjacencyList; // список смежности
+        public Graph(int length)
         {
-            // initialise vertex count 
-            this.vertices = numOfVertices;
-
-            // initialise adjacency list 
-            initGraph();
+            Length = length;
+            MakeAdjList();
+            MakeArrNodes();
         }
 
         // utility method to initialise adjacency list 
-        public void initGraph()
+        private void MakeAdjList()
         {
-            adj = new List<int>[vertices];
-            for (int i = 0; i < vertices; i++)
+            adjacencyList = new List<int>[Length];
+            for (int i = 0; i < Length; i++)
+                adjacencyList[i] = new List<int>();
+        }
+        private void MakeArrNodes()
+        {
+            nodes = new int[Length];
+        }
+        public void AddEdge(int startNode, int endNode)
+        {
+            adjacencyList[startNode].Add(endNode);
+            adjacencyList[endNode].Add(startNode);
+            nodes[startNode] = startNode;
+            nodes[endNode] = endNode;
+        }
+        public void RemoveEdge(int startNode, int endNode)
+        {
+            adjacencyList[startNode].Remove(endNode);
+            adjacencyList[endNode].Remove(startNode);
+            nodes[startNode] = -1;
+            nodes[endNode] = -1;
+        }
+        public void FindNode(int node)
+        {
+            if (node > Length) Console.WriteLine(":(");
+            else Console.WriteLine(adjacencyList[node].Count);
+        }
+        public void AddNode(int node)
+        {
+            adjacencyList[node].Add(node);
+
+        }
+        public void RemoveNode(int node)
+        {
+            adjacencyList[node].Remove(node);
+        }
+
+        public  bool isConnected()
+        {
+            // Mark all the vertices as not visited 
+            bool[] visited = new bool[Length];
+            int i;
+            for (i = 0; i < Length; i++)
+                visited[i] = false;
+
+            // Find a vertex with non-zero degree 
+            for (i = 0; i < Length; i++)
+                if (adjacencyList[i].Count != 0)
+                    break;
+
+            // If there are no edges in the graph, return true 
+            if (i == Length)
+                return true;
+
+            // Start DFS traversal from a vertex with non-zero degree 
+            DeepSearchCount(i, visited);
+
+            // Check if all non-zero degree vertices are visited 
+            for (i = 0; i < Length; i++)
+                if (visited[i] == false && adjacencyList[i].Count > 0)
+                    return false;
+
+            return true;
+        }
+        public int isEulerian()
+        {
+            // Check if all non-zero degree vertices are connected 
+            if (isConnected() == false)
+                return 0;
+
+            // Count vertices with odd degree 
+            int odd = 0;
+            for (int i = 0; i < Length; i++)
+                if (adjacencyList[i].Count % 2 != 0)
+                    odd++;
+
+            // If count is more than 2, then graph is not Eulerian 
+            if (odd > 2)
+                return 0;
+
+            // If odd count is 2, then semi-eulerian. 
+            // If odd count is 0, then eulerian 
+            // Note that odd count can never be 1 for undirected graph 
+            return (odd == 2) ? 1 : 2;
+        }
+        public void Test()
+        {
+            int res = isEulerian();
+            if (res == 0)
+                Console.WriteLine("graph is not Eulerian");
+            else if (res == 1)
             {
-                adj[i] = new List<int>();
+                Console.WriteLine("graph has a Euler path");
+                FindEulerTour();
+            }
+            else
+            {
+                Console.WriteLine("graph has a Euler cycle");
+                FindEulerTour();
             }
         }
-
-        // add edge u-v 
-        public void addEdge(int u, int v)
+        public void FindEulerTour()
         {
-            adj[u].Add(v);
-            adj[v].Add(u);
-        }
-
-        // This function removes edge u-v from graph. 
-        public void removeEdge(int u, int v)
-        {
-            adj[u].Remove(v);
-            adj[v].Remove(u);
-        }
-
-        /* The main function that print Eulerian Trail.  
-           It first finds an odd degree vertex (if there  
-           is any) and then calls printEulerUtil() to 
-           print the path */
-        public void printEulerTour()
-        {
-            // Find a vertex with odd degree 
+            // находим вершину нечетной степени
             int u = 0;
-            for (int i = 0; i < vertices; i++)
+            for (int i = 0; i < Length; i++)
             {
-                if (adj[i].Count % 2 == 1)
+                if (adjacencyList[i].Count % 2 == 1)
                 {
                     u = i;
                     break;
                 }
             }
-
             // Print tour starting from oddv 
             printEulerUtil(u);
             Console.WriteLine();
         }
 
-        // Print Euler tour starting from vertex u 
+        // Печатаем путь, начиная с определенной вершины  
         public void printEulerUtil(int u)
         {
-            // Recur for all the vertices adjacent to this vertex 
-            for (int i = 0; i < adj[u].Count; i++)
+            // Повторяем для вершин, смежных данной
+            for (int i = 0; i < adjacencyList[u].Count; i++)
             {
-                int v = adj[u][i];
+                int v = adjacencyList[u][i];
                 // If edge u-v is a valid next edge 
                 if (isValidNextEdge(u, v))
                 {
                     Console.Write(u + "-" + v + " ");
 
-                    // This edge is used so remove it now 
-                    removeEdge(u, v);
+                    // мы прошли по ребру, следовательно больше его не используем
+                    RemoveEdge(u, v);
                     printEulerUtil(v);
                 }
             }
         }
 
-        // The function to check if edge u-v can be 
-        // considered as next edge in Euler Tout 
+        // проверям, может ли ребро u-v быть
+        // рассмотрено следующим Euler Tout 
         private bool isValidNextEdge(int u, int v)
         {
             // The edge u-v is valid in one of the 
             // following two cases: 
 
-            // 1) If v is the only adjacent vertex of u  
-            // ie size of adjacent vertex list is 1 
-            if (adj[u].Count == 1)
-            {
-                return true;
-            }
+            // 1) 1) Если v единственная смежная вершина из u
+            // т.е. размер списка смежных вершин равен 1
+            if (adjacencyList[u].Count == 1) return true;
 
-            // 2) If there are multiple adjacents, then 
+            // 2) Если есть несколько смежных, то проверяем, что
             // u-v is not a bridge Do following steps  
             // to check if u-v is a bridge 
             // 2.a) count of vertices reachable from u 
-            bool[] isVisited = new bool[this.vertices];
-            int count1 = dfsCount(u, isVisited);
+            bool[] isVisited = new bool[Length];
+            int count1 = DeepSearchCount(u, isVisited);
 
-            // 2.b) Remove edge (u, v) and after removing 
-            //  the edge, count vertices reachable from u 
-            removeEdge(u, v);
-            isVisited = new bool[this.vertices];
-            int count2 = dfsCount(u, isVisited);
+            // 2.b) Удаляем ребро (u, v), затем считаем вершины достижимые до u 
+            RemoveEdge(u, v);
+            isVisited = new bool[Length];
+            int count2 = DeepSearchCount(u, isVisited);
 
-            // 2.c) Add the edge back to the graph 
-            addEdge(u, v);
+            // 2.c)Добавляем ребро обратно в граф
+            AddEdge(u, v);
             return (count1 > count2) ? false : true;
         }
 
-        // A DFS based function to count reachable 
-        // vertices from v 
-        private int dfsCount(int v, bool[] isVisited)
+        // ищем вершины, достижимые от данной
+        private int DeepSearchCount(int node, bool[] isVisited)
         {
-            // Mark the current node as visited 
-            isVisited[v] = true;
-            int count = 1;
-            // Recur for all vertices adjacent to this vertex 
-            foreach (int adj in adj[v])
+            // помечаем текущую вершину как посещенную 
+            isVisited[node] = true;
+            int count = 1;           
+            foreach (int adj in adjacencyList[node])// повторяем для всех инцидентных вершин 
             {
                 if (!isVisited[adj])
-                {
-                    count = count + dfsCount(adj, isVisited);
-                }
+                    count = count + DeepSearchCount(adj, isVisited);
             }
             return count;
         }

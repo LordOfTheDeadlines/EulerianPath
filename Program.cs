@@ -6,30 +6,30 @@ namespace SemesterTask
     {
         static void Main(string[] args)
         {
-            Graph g1 = new Graph(4);
-            g1.addEdge(0, 1);
-            g1.addEdge(0, 2);
-            g1.addEdge(1, 2);
-            g1.addEdge(2, 3);
-            g1.printEulerTour();
+            //var graph = MyGraph.MakeGraph(
+            //0, 1,
+            //0, 2,
+            //1, 3,
+            //1, 4,
+            //2, 3,
+            //3, 4);
 
-            Graph g2 = new Graph(3);
-            g2.addEdge(0, 1);
-            g2.addEdge(1, 2);
-            g2.addEdge(2, 0);
-            g2.printEulerTour();
+            Graph g1 = new Graph(10);
+            g1.AddEdge(0, 1);
+            g1.AddEdge(0, 2);
+            g1.AddEdge(1, 2);
+            g1.AddEdge(2, 3);
+            g1.AddEdge(3, 4);
+            g1.AddEdge(4, 2);
+            g1.AddNode(5);
+            g1.FindNode(8);
+            //if(g1.IsEulerian())
+            //g1.FindEulerTour();
+            g1.Test();
 
-            Graph g3 = new Graph(5);
-            g3.addEdge(1, 0);
-            g3.addEdge(0, 2);
-            g3.addEdge(2, 1);
-            g3.addEdge(0, 3);
-            g3.addEdge(3, 4);
-            g3.addEdge(3, 2);
-            g3.addEdge(3, 1);
-            g3.addEdge(2, 4);
-            g3.printEulerTour();
+
+
         }
     }
-    }
+}
 
