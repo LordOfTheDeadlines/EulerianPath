@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace SemesterTask
 {
@@ -6,29 +7,34 @@ namespace SemesterTask
     {
         static void Main(string[] args)
         {
-            //var graph = MyGraph.MakeGraph(
-            //0, 1,
-            //0, 2,
-            //1, 3,
-            //1, 4,
-            //2, 3,
-            //3, 4);
-
-            Graph g1 = new Graph(10);
-            g1.AddEdge(0, 1);
-            g1.AddEdge(0, 2);
-            g1.AddEdge(1, 2);
-            g1.AddEdge(2, 3);
-            g1.AddEdge(3, 4);
-            g1.AddEdge(4, 2);
-            g1.AddNode(5);
-            g1.FindNode(8);
-            //if(g1.IsEulerian())
-            //g1.FindEulerTour();
-            g1.Test();
-
-
-
+            bool flag = true;
+            Console.WriteLine("Для проверки корректности работы алгоритма сгенерируем случайный граф");
+            while (flag)
+            {
+                var g1 = RandomGraph();
+                g1.IsEulerian();
+                Console.WriteLine("Сгенерировать еще один граф? 1-да, 0-нет");
+                int num = Convert.ToInt32(Console.ReadLine());
+                if (num != 1) flag = false;
+            }
+        }
+        public static Graph RandomGraph()
+        {
+            var rnd = new Random();
+            int length = rnd.Next(2, 20);
+            var graph = new Graph(length);
+            Console.WriteLine("Длина графа равна " + length);
+            var eaglesCount = rnd.Next(1, length * (length - 1) / 2);
+            Console.WriteLine("Количество ребер в графе равно " + eaglesCount);
+            Console.WriteLine("Создадим ребра: ");
+            for (int i = 0; i < eaglesCount; i++)
+            {
+                var startNode = rnd.Next(0, length);
+                var endNode = rnd.Next(0, length);
+                graph.AddEdge(startNode, endNode);
+                Console.WriteLine(startNode + "-" + endNode);
+            }
+            return graph;
         }
     }
 }

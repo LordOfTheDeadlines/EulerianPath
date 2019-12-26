@@ -1,125 +1,126 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace SemesterTask
 {
     public class Graph
     {
-        private int Length;
-        private int[] nodes;
+        public static int first;
+        public static int last;
+        public static int Length;
         private List<int>[] adjacencyList; // список смежности
+        private List<int>[] copy;
         public Graph(int length)
         {
             Length = length;
             MakeAdjList();
-            MakeArrNodes();
         }
-
-        // utility method to initialise adjacency list 
         private void MakeAdjList()
         {
             adjacencyList = new List<int>[Length];
             for (int i = 0; i < Length; i++)
                 adjacencyList[i] = new List<int>();
+            copy = new List<int>[Length];
+            for (int i = 0; i < Length; i++)
+                copy[i] = new List<int>();
         }
-        private void MakeArrNodes()
-        {
-            nodes = new int[Length];
-        }
+
         public void AddEdge(int startNode, int endNode)
         {
             adjacencyList[startNode].Add(endNode);
             adjacencyList[endNode].Add(startNode);
-            nodes[startNode] = startNode;
-            nodes[endNode] = endNode;
+            copy[startNode].Add(endNode);
+            copy[endNode].Add(startNode);
         }
         public void RemoveEdge(int startNode, int endNode)
         {
             adjacencyList[startNode].Remove(endNode);
             adjacencyList[endNode].Remove(startNode);
-            nodes[startNode] = -1;
-            nodes[endNode] = -1;
         }
-        public void FindNode(int node)
+        public bool FindNode(int node)
         {
-            if (node > Length) Console.WriteLine(":(");
-            else Console.WriteLine(adjacencyList[node].Count);
+            if (node > Length)
+            {
+                Console.WriteLine(":(");
+                return false;
+            }
+            else
+            {
+                Console.WriteLine(adjacencyList[node].Count);
+                return true;
+            }
         }
         public void AddNode(int node)
         {
             adjacencyList[node].Add(node);
-
         }
         public void RemoveNode(int node)
         {
             adjacencyList[node].Remove(node);
         }
 
-        public  bool isConnected()
+
+        private bool IsConnected()
         {
-            // Mark all the vertices as not visited 
+            // Помечаем все вершины как не посещенные
             bool[] visited = new bool[Length];
-            int i;
-            for (i = 0; i < Length; i++)
-                visited[i] = false;
+            int nodeNum;
+            for (int i = 0; i < Length; i++) visited[i] = false;
 
-            // Find a vertex with non-zero degree 
-            for (i = 0; i < Length; i++)
-                if (adjacencyList[i].Count != 0)
+            // Находим вершину с ненулевой степенью
+            for (nodeNum = 0; nodeNum < Length; nodeNum++)
+                if (adjacencyList[nodeNum].Count != 0)
                     break;
+            // Если в графе нет ребер
+            if (nodeNum == Length) return true;
 
-            // If there are no edges in the graph, return true 
-            if (i == Length)
-                return true;
+            //  Запускаем обход в глубину из вершины с ненулевой степенью
+            DeepSearchCount(nodeNum, visited);
 
-            // Start DFS traversal from a vertex with non-zero degree 
-            DeepSearchCount(i, visited);
-
-            // Check if all non-zero degree vertices are visited 
-            for (i = 0; i < Length; i++)
+            // Проверяем, все ли ненулевые вершины посещены
+            for (int i = 0; i < Length; i++)
                 if (visited[i] == false && adjacencyList[i].Count > 0)
                     return false;
-
             return true;
         }
-        public int isEulerian()
+        public void IsEulerian()
         {
-            // Check if all non-zero degree vertices are connected 
-            if (isConnected() == false)
-                return 0;
-
-            // Count vertices with odd degree 
+            // Проверяем, все ли вершины ненулевой степени связаны
+            if (IsConnected() == false)
+            {
+                Console.WriteLine("Граф не является Эйлеровым");
+                return;
+            }
+            // Подсчет вершин с нечетной степенью
             int odd = 0;
             for (int i = 0; i < Length; i++)
                 if (adjacencyList[i].Count % 2 != 0)
                     odd++;
 
-            // If count is more than 2, then graph is not Eulerian 
+            // если количество больше 2, то граф не эйлеров
             if (odd > 2)
-                return 0;
-
-            // If odd count is 2, then semi-eulerian. 
-            // If odd count is 0, then eulerian 
-            // Note that odd count can never be 1 for undirected graph 
-            return (odd == 2) ? 1 : 2;
-        }
-        public void Test()
-        {
-            int res = isEulerian();
-            if (res == 0)
-                Console.WriteLine("graph is not Eulerian");
-            else if (res == 1)
             {
-                Console.WriteLine("graph has a Euler path");
-                FindEulerTour();
+                Console.WriteLine("Граф не является Эйлеровым");
+                return;
+            }
+            // если количество равно 2, то граф полу-эйлеров
+            // если 0, то эйлеров 
+            if(odd == 2) 
+            {
+                Console.WriteLine("Граф имеет Эйлеров путь");
+                PrintEulerTour();
+                return;
             }
             else
             {
-                Console.WriteLine("graph has a Euler cycle");
-                FindEulerTour();
-            }
+                Console.WriteLine("Граф имеет Эйлеров цикл");
+                PrintEulerTour();
+                return;
+            }        
         }
-        public void FindEulerTour()
+        static bool[] Visited = new bool[Length];
+        public void PrintEulerTour()
         {
             // находим вершину нечетной степени
             int u = 0;
@@ -128,63 +129,53 @@ namespace SemesterTask
                 if (adjacencyList[i].Count % 2 == 1)
                 {
                     u = i;
+                    first = i;
                     break;
                 }
             }
-            // Print tour starting from oddv 
-            printEulerUtil(u);
+            FleryPrint(u);
             Console.WriteLine();
+            if(first!=last)
+            {
+                Console.WriteLine("Возвращаться будем так:");
+                bool[] Visited = new bool[Length];
+                DeepSearch(last,last,first, Visited);
+            }
         }
 
         // Печатаем путь, начиная с определенной вершины  
-        public void printEulerUtil(int u)
+        private void FleryPrint(int u)
         {
             // Повторяем для вершин, смежных данной
             for (int i = 0; i < adjacencyList[u].Count; i++)
             {
                 int v = adjacencyList[u][i];
-                // If edge u-v is a valid next edge 
-                if (isValidNextEdge(u, v))
+                // если ребро может быть рассмотрено следующим
+                if (IsValidNextEdge(u, v))
                 {
                     Console.Write(u + "-" + v + " ");
-
+                    last = v;
                     // мы прошли по ребру, следовательно больше его не используем
                     RemoveEdge(u, v);
-                    printEulerUtil(v);
+                    FleryPrint(v);
                 }
             }
         }
 
-        // проверям, может ли ребро u-v быть
-        // рассмотрено следующим Euler Tout 
-        private bool isValidNextEdge(int u, int v)
+        private bool IsValidNextEdge(int u, int v)
         {
-            // The edge u-v is valid in one of the 
-            // following two cases: 
-
-            // 1) 1) Если v единственная смежная вершина из u
-            // т.е. размер списка смежных вершин равен 1
             if (adjacencyList[u].Count == 1) return true;
 
-            // 2) Если есть несколько смежных, то проверяем, что
-            // u-v is not a bridge Do following steps  
-            // to check if u-v is a bridge 
-            // 2.a) count of vertices reachable from u 
             bool[] isVisited = new bool[Length];
             int count1 = DeepSearchCount(u, isVisited);
-
-            // 2.b) Удаляем ребро (u, v), затем считаем вершины достижимые до u 
             RemoveEdge(u, v);
             isVisited = new bool[Length];
             int count2 = DeepSearchCount(u, isVisited);
-
-            // 2.c)Добавляем ребро обратно в граф
             AddEdge(u, v);
             return (count1 > count2) ? false : true;
         }
 
-        // ищем вершины, достижимые от данной
-        private int DeepSearchCount(int node, bool[] isVisited)
+        public int DeepSearchCount(int node, bool[] isVisited)
         {
             // помечаем текущую вершину как посещенную 
             isVisited[node] = true;
@@ -195,6 +186,18 @@ namespace SemesterTask
                     count = count + DeepSearchCount(adj, isVisited);
             }
             return count;
+        }
+        public void DeepSearch(int node,int start,int final, bool[] isVisited)
+        {
+            // помечаем текущую вершину как посещенную 
+            isVisited[node] = true;
+            Console.WriteLine(node);
+            foreach (var adj in copy[node])// повторяем для всех инцидентных вершин 
+            {
+                if (!isVisited[adj]&&start!=final)
+                    DeepSearch(adj, start, final, isVisited);
+
+            }
         }
     }
 }
