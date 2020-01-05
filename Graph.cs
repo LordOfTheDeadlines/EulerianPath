@@ -4,83 +4,111 @@ using System.Diagnostics;
 
 namespace SemesterTask
 {
+    public class Node
+    {
+        public int value;
+        public List<Node> ajNodes;
+        public bool IsVisited;
+        public List<Node> copyNodes;
+        private void MakeAdjNodes()
+        {
+            ajNodes = new List<Node>();
+            copyNodes = new List<Node>();
+        }
+        public Node(int value)
+        {
+            this.value = value;
+            this.IsVisited = false;
+            MakeAdjNodes();
+        }
+    }
     public class Graph
     {
-        public static int first;
-        public static int last;
-        public static int Length;
-        private List<int>[] adjacencyList; // список смежности
-        private List<int>[] copy;
-        public Graph(int length)
+        public static Node first;
+        public static Node last;
+        private List<Node> nodes;
+        private List<Node> copy;
+        public Graph()
         {
-            Length = length;
             MakeAdjList();
         }
         private void MakeAdjList()
         {
-            adjacencyList = new List<int>[Length];
-            for (int i = 0; i < Length; i++)
-                adjacencyList[i] = new List<int>();
-            copy = new List<int>[Length];
-            for (int i = 0; i < Length; i++)
-                copy[i] = new List<int>();
+            nodes = new List<Node>();
+            copy = new List<Node>();
+        }
+        public void AddEdge(Node startNode, Node endNode)
+        {
+            if (!this.FindNode(endNode))
+            {
+                copy.Add(endNode);
+                nodes.Add(endNode);
+            }
+            if (!this.FindNode(startNode))
+            {
+                nodes.Add(startNode);
+                copy.Add(startNode);
+            }
+            startNode.ajNodes.Add(endNode);
+            endNode.ajNodes.Add(startNode);           
+            startNode.copyNodes.Add(endNode);
+            endNode.copyNodes.Add(startNode);
+        }
+        public void RemoveEdge(Node startNode, Node endNode)
+        {
+            foreach(var e in nodes)
+            {
+                if (e == startNode && e.ajNodes.Contains(endNode))
+                {
+                    e.ajNodes.Remove(endNode);
+                }
+               if (e == endNode && e.ajNodes.Contains(startNode))
+               {
+                    e.ajNodes.Remove(startNode);
+               }
+            }
         }
 
-        public void AddEdge(int startNode, int endNode)
+        public bool FindNode(Node node)
         {
-            adjacencyList[startNode].Add(endNode);
-            adjacencyList[endNode].Add(startNode);
-            copy[startNode].Add(endNode);
-            copy[endNode].Add(startNode);
-        }
-        public void RemoveEdge(int startNode, int endNode)
-        {
-            adjacencyList[startNode].Remove(endNode);
-            adjacencyList[endNode].Remove(startNode);
-        }
-        public bool FindNode(int node)
-        {
-            if (node > Length)
+           foreach(var e in nodes)
             {
-                Console.WriteLine(":(");
-                return false;
+                if (e == node) return true;
             }
-            else
+            return false;
+        }
+        public void AddNode(Node node)
+        {
+            if (!this.FindNode(node))
             {
-                Console.WriteLine(adjacencyList[node].Count);
-                return true;
+                nodes.Add(node);
+                copy.Add(node);
             }
         }
-        public void AddNode(int node)
+        public void RemoveNode(Node node)
         {
-            adjacencyList[node].Add(node);
+            nodes.Remove(node);
         }
-        public void RemoveNode(int node)
-        {
-            adjacencyList[node].Remove(node);
-        }
-
 
         private bool IsConnected()
         {
-            // Помечаем все вершины как не посещенные
-            bool[] visited = new bool[Length];
-            int nodeNum;
-            for (int i = 0; i < Length; i++) visited[i] = false;
-
+            Node nodeNum=new Node(-1);
             // Находим вершину с ненулевой степенью
-            for (nodeNum = 0; nodeNum < Length; nodeNum++)
-                if (adjacencyList[nodeNum].Count != 0)
+            foreach (var e in nodes)
+                if (e.ajNodes.Count != 0)
+                {
+                    nodeNum = e;
                     break;
+                }
             // Если в графе нет ребер
-            if (nodeNum == Length) return true;
+            if (nodeNum.value==-1) return true;
 
             //  Запускаем обход в глубину из вершины с ненулевой степенью
-            DeepSearchCount(nodeNum, visited);
+            DeepSearchCount(nodeNum);
 
             // Проверяем, все ли ненулевые вершины посещены
-            for (int i = 0; i < Length; i++)
-                if (visited[i] == false && adjacencyList[i].Count > 0)
+            foreach (var e in nodes)
+                if (e.IsVisited==false && e.ajNodes.Count > 0)
                     return false;
             return true;
         }
@@ -94,8 +122,8 @@ namespace SemesterTask
             }
             // Подсчет вершин с нечетной степенью
             int odd = 0;
-            for (int i = 0; i < Length; i++)
-                if (adjacencyList[i].Count % 2 != 0)
+            foreach (var e in nodes)
+                if (e.ajNodes.Count % 2 != 0)
                     odd++;
 
             // если количество больше 2, то граф не эйлеров
@@ -106,7 +134,7 @@ namespace SemesterTask
             }
             // если количество равно 2, то граф полу-эйлеров
             // если 0, то эйлеров 
-            if(odd == 2) 
+            if (odd == 2)
             {
                 Console.WriteLine("Граф имеет Эйлеров путь");
                 PrintEulerTour();
@@ -117,85 +145,83 @@ namespace SemesterTask
                 Console.WriteLine("Граф имеет Эйлеров цикл");
                 PrintEulerTour();
                 return;
-            }        
+            }
         }
-        static bool[] Visited = new bool[Length];
         public void PrintEulerTour()
         {
             // находим вершину нечетной степени
-            int u = 0;
-            for (int i = 0; i < Length; i++)
+            var u = new Node(-1);
+            foreach(var e in nodes)
             {
-                if (adjacencyList[i].Count % 2 == 1)
+                if(e.ajNodes.Count%2==1)
                 {
-                    u = i;
-                    first = i;
+                    u = e;
+                    first = e;
                     break;
                 }
             }
+
             FleryPrint(u);
             Console.WriteLine();
-            if(first!=last)
+            if (first != last)
             {
+                foreach (var e in nodes) e.IsVisited = false;
                 Console.WriteLine("Возвращаться будем так:");
-                bool[] Visited = new bool[Length];
-                DeepSearch(last,last,first, Visited);
+                DeepSearch(last, last, first);
             }
         }
 
         // Печатаем путь, начиная с определенной вершины  
-        private void FleryPrint(int u)
+        private void FleryPrint(Node u)
         {
             // Повторяем для вершин, смежных данной
-            for (int i = 0; i < adjacencyList[u].Count; i++)
+            foreach (var e in u.ajNodes)
             {
-                int v = adjacencyList[u][i];
+                Node v = e;
                 // если ребро может быть рассмотрено следующим
                 if (IsValidNextEdge(u, v))
                 {
-                    Console.Write(u + "-" + v + " ");
+                    Console.Write(u.value + "-" + v.value + " ");
                     last = v;
                     // мы прошли по ребру, следовательно больше его не используем
                     RemoveEdge(u, v);
                     FleryPrint(v);
+                    if (u.ajNodes.Count == 0) return;
                 }
             }
         }
 
-        private bool IsValidNextEdge(int u, int v)
+        private bool IsValidNextEdge(Node u, Node v)
         {
-            if (adjacencyList[u].Count == 1) return true;
-
-            bool[] isVisited = new bool[Length];
-            int count1 = DeepSearchCount(u, isVisited);
+            if (u.ajNodes.Count == 1) return true;
+            int count1 = DeepSearchCount(u);
             RemoveEdge(u, v);
-            isVisited = new bool[Length];
-            int count2 = DeepSearchCount(u, isVisited);
+            int count2 = DeepSearchCount(u);
             AddEdge(u, v);
             return (count1 > count2) ? false : true;
         }
 
-        public int DeepSearchCount(int node, bool[] isVisited)
+        public int DeepSearchCount(Node node)
         {
             // помечаем текущую вершину как посещенную 
-            isVisited[node] = true;
-            int count = 1;           
-            foreach (int adj in adjacencyList[node])// повторяем для всех инцидентных вершин 
+            node.IsVisited = true;
+            int count = 1;
+            foreach(var adj in node.ajNodes)// повторяем для всех инцидентных вершин 
             {
-                if (!isVisited[adj])
-                    count = count + DeepSearchCount(adj, isVisited);
+                if (adj.IsVisited==false)
+                    count = count + DeepSearchCount(adj);
             }
             return count;
         }
-        public void DeepSearch(int node,int start,int final, bool[] isVisited)
+        public void DeepSearch(Node node, Node start, Node final)
         {
             // помечаем текущую вершину как посещенную 
-            isVisited[node] = true;
-            Console.WriteLine(node);
-            foreach (var adj in copy[node])// повторяем для всех инцидентных вершин 
+            node.IsVisited = true;
+            Console.WriteLine(node.value);
+            foreach (var adj in node.copyNodes)// повторяем для всех инцидентных вершин 
             {
-                if (!isVisited[adj]&&start!=final)
-                    DeepSearch(adj, start, final, isVisited);
+                if (adj.IsVisited==false && start != final)
+                    DeepSearch(adj, start, final);
 
             }
         }
