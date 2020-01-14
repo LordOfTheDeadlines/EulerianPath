@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace SemesterTask
 {
@@ -9,17 +10,11 @@ namespace SemesterTask
         {
             bool flag = true;
             Console.WriteLine("Для проверки корректности работы алгоритма сгенерируем случайный граф");
-            var n1 = new Node(1);
-            var n2 = new Node(2);
-            var n3 = new Node(3);
-            var n4 = new Node(4);
-            var g = new Graph();
-            g.AddEdge(n1, n2);
-            g.AddEdge(n2, n3);
-            g.AddEdge(n3, n4);
-            ////g.RemoveEdge(n1, n2);
-            ////g.RemoveNode(n1);
-            g.IsEulerian();
+            var graph = new Graph();
+            graph = InputGraph();
+            var n5 = new Node(5);
+            graph.AddEdge(n5, n5);
+            graph.IsEulerian();
             //while (flag)
             //{
             //    var g1 = RandomGraph();
@@ -32,20 +27,40 @@ namespace SemesterTask
         public static Graph RandomGraph()
         {
             var rnd = new Random();
-            int length = rnd.Next(2, 20);
+            int length = rnd.Next(2,10);
             var graph = new Graph();
-            Console.WriteLine("Длина графа равна " + length);
+            //Console.WriteLine("Длина графа равна " + length);
             var eaglesCount = rnd.Next(1, length * (length - 1) / 2);
-            Console.WriteLine("Количество ребер в графе равно " + eaglesCount);
+            Console.WriteLine("Количество вершин в графе равно " + eaglesCount);
             Console.WriteLine("Создадим ребра: ");
-            for (int i = 0; i < eaglesCount; i++)
+            for (int i = 0; i < eaglesCount-1; i++)
             {
                 var startNode = rnd.Next(0, length);
                 var endNode = rnd.Next(0, length);
+                while (startNode == endNode) endNode = rnd.Next(0, length);
                 Node n1=new Node(startNode);
                 Node n2 = new Node(endNode);
                 graph.AddEdge(n1, n2);
                 Console.WriteLine(startNode + "-" + endNode);
+            }
+            return graph;
+        }
+        public static Graph InputGraph()
+        {
+            var graph = new Graph();
+            var reader = new StreamReader(@"C:\Users\Acer\Desktop\Я\Учеба\Алгоритмы и анализ сложности\Практики\SemesterTask\input.txt");
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                string[]arr=line.Split(' ');
+                var node = new Node(Int32.Parse(arr[0]));
+                if (arr.Length == 1) graph.AddNode(node);
+                else
+                for (int i = 1; i < arr.Length; i++)
+                {
+                    var edNode = new Node(Int32.Parse(arr[i]));
+                    graph.AddEdge(node, edNode);
+                }
             }
             return graph;
         }

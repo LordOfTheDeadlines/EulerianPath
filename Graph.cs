@@ -30,42 +30,54 @@ namespace SemesterTask
         private List<Node> copy;
         public Graph()
         {
-            MakeAdjList();
+            MakeNodeList();
         }
-        private void MakeAdjList()
+        private void MakeNodeList()
         {
             nodes = new List<Node>();
             copy = new List<Node>();
         }
         public void AddEdge(Node startNode, Node endNode)
         {
+            //if (startNode.value == endNode.value) return;
             if (!this.FindNode(endNode))
             {
                 copy.Add(endNode);
                 nodes.Add(endNode);
             }
+            else
+                foreach(var e in nodes)
+                    if(e.value==endNode.value)
+                    {
+                        endNode = e;
+                        break;
+                    }
             if (!this.FindNode(startNode))
             {
                 nodes.Add(startNode);
                 copy.Add(startNode);
             }
-            startNode.ajNodes.Add(endNode);
-            endNode.ajNodes.Add(startNode);           
-            startNode.copyNodes.Add(endNode);
-            endNode.copyNodes.Add(startNode);
+            else
+                foreach (var e in nodes)
+                    if (e.value == startNode.value)
+                    {
+                        startNode = e;
+                        break;
+                    }
+            if (!startNode.ajNodes.Contains(endNode))
+            {
+                startNode.ajNodes.Add(endNode);
+                endNode.ajNodes.Add(startNode);
+                startNode.copyNodes.Add(endNode);
+                endNode.copyNodes.Add(startNode);
+            }
         }
         public void RemoveEdge(Node startNode, Node endNode)
         {
-            foreach(var e in nodes)
+            if (startNode.ajNodes.Contains(endNode))
             {
-                if (e == startNode && e.ajNodes.Contains(endNode))
-                {
-                    e.ajNodes.Remove(endNode);
-                }
-               if (e == endNode && e.ajNodes.Contains(startNode))
-               {
-                    e.ajNodes.Remove(startNode);
-               }
+                startNode.ajNodes.Remove(endNode);
+                endNode.ajNodes.Remove(startNode);
             }
         }
 
@@ -73,7 +85,7 @@ namespace SemesterTask
         {
            foreach(var e in nodes)
             {
-                if (e == node) return true;
+                if (e.value == node.value) return true;
             }
             return false;
         }
@@ -87,12 +99,20 @@ namespace SemesterTask
         }
         public void RemoveNode(Node node)
         {
-            nodes.Remove(node);
+            if (!FindNode(node))
+            {
+                foreach (var e in nodes)
+                    if (e.ajNodes.Contains(node))
+                        RemoveEdge(e, node);
+                nodes.Remove(node);
+            }
         }
 
         private bool IsConnected()
         {
             Node nodeNum=new Node(-1);
+            foreach(var e in nodes)
+                if(e.ajNodes.Count==0) return false;
             // Находим вершину с ненулевой степенью
             foreach (var e in nodes)
                 if (e.ajNodes.Count != 0)
@@ -147,12 +167,14 @@ namespace SemesterTask
                 return;
             }
         }
-        public void PrintEulerTour()
+        private void PrintEulerTour()
         {
             // находим вершину нечетной степени
             var u = new Node(-1);
+            var v = new Node(-2);
             foreach(var e in nodes)
             {
+                v = e;
                 if(e.ajNodes.Count%2==1)
                 {
                     u = e;
@@ -160,8 +182,12 @@ namespace SemesterTask
                     break;
                 }
             }
-
-            FleryPrint(u);
+            if (u.value == -1)
+            {
+                first=last = v;
+                FleryPrint(v);
+            }
+            else FleryPrint(u);
             Console.WriteLine();
             if (first != last)
             {
@@ -213,7 +239,7 @@ namespace SemesterTask
             }
             return count;
         }
-        public void DeepSearch(Node node, Node start, Node final)
+        private void DeepSearch(Node node, Node start, Node final)
         {
             // помечаем текущую вершину как посещенную 
             node.IsVisited = true;
@@ -222,7 +248,6 @@ namespace SemesterTask
             {
                 if (adj.IsVisited==false && start != final)
                     DeepSearch(adj, start, final);
-
             }
         }
     }
